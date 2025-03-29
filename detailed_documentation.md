@@ -2,7 +2,7 @@
 
 ## Overview 
 
-![Overview](images/pipeline.png)
+![Overview](images/pipeline.svg)
 
 ## Dataset Understanding
 
