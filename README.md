@@ -6,6 +6,8 @@
 
 This repository documents the systematic exploration undertaken for the preliminary test task associated with the **GSOC 2025 NEURODYAD project**. The test involved classifying participant brain states (binary) using a provided dataset (N=40 samples) containing static EEG band power features (alpha, beta, delta, theta, gamma) from a 64-channel setup.
 
+![pipeline](https://github.com/user-attachments/assets/4482d080-3db8-4681-a09d-8ec4f0644cb6)
+
 **The primary goal of this exploration was to assess the dataset's characteristics and evaluate standard machine learning and graph-based approaches before tackling the main project's focus on CEBRA and time-locked dyadic EEG data.**
 
 ![Channel Distribution](images/channel_distribution.png)
