@@ -43,7 +43,6 @@ Across all phases and models, a consistent pattern emerged:
 *   **Signal Strength:** The static band power features, even with feature selection, engineering, and graph structure incorporated, appear to lack a strong, discernible signal for reliably classifying the two brain states in this specific dataset.
 *   **Feature Selection Divergence:** UFS, RFE, and PCA correctly identified different "top" features, highlighting their distinct underlying mechanisms for evaluating importance.
 
-**(Optional: Add a small plot summarizing the poor CV AUC results across models)**
 ![Optional Results Plot](images/gnn_results_plot.png)
 
 **In conclusion, this thorough exploration of the preliminary test dataset successfully demonstrated the application of various ML and GNN techniques but ultimately highlighted the significant challenges posed by the dataset's size and potential lack of signal in the provided static features. This outcome strongly motivates the use of more advanced techniques like CEBRA on richer, time-series dyadic data, as planned for the main GSOC project.**
