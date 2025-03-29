@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">
+  <!-- Background -->
+  <rect width="800" height="500" fill="#f8f9fa" rx="10" ry="10" />
+  
+  <!-- Title -->
+  <text x="400" y="40" font-family="Arial" font-size="24" font-weight="bold" text-anchor="middle" fill="#333">EEG Classification Pipeline - GSOC NEURODYAD</text>
+  
+  <!-- Data section -->
+  <g id="data-section">
+    <rect x="50" y="90" width="180" height="90" fill="#e3f2fd" rx="5" ry="5" stroke="#2196F3" stroke-width="2" />
+    <text x="140" y="115" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">EEG Dataset</text>
+    <text x="140" y="140" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">40 samples × 320 features</text>
+    <text x="140" y="160" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">(64 electrodes × 5 bands)</text>
+  </g>
+  
+  <!-- Pipeline Flow diagram -->
+  <g id="pipeline">
+    <!-- Phase 1: Baseline Modeling -->
+    <rect x="300" y="90" width="180" height="90" fill="#e8f5e9" rx="5" ry="5" stroke="#4CAF50" stroke-width="2" />
+    <text x="390" y="115" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Phase 1</text>
+    <text x="390" y="140" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">Baseline Models</text>
+    <text x="390" y="160" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">LogReg, SVM, KNN</text>
+    
+    <!-- Phase 2: Feature Selection -->
+    <rect x="300" y="205" width="180" height="90" fill="#fff3e0" rx="5" ry="5" stroke="#FF9800" stroke-width="2" />
+    <text x="390" y="230" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Phase 2</text>
+    <text x="390" y="255" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">Feature Selection</text>
+    <text x="390" y="275" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">UFS, RFE, PCA</text>
+    
+    <!-- Phase 3: GNN Approach -->
+    <rect x="300" y="320" width="180" height="90" fill="#f3e5f5" rx="5" ry="5" stroke="#9C27B0" stroke-width="2" />
+    <text x="390" y="345" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Phase 3</text>
+    <text x="390" y="370" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">Graph Neural Networks</text>
+    <text x="390" y="390" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">GCN, GAT</text>
+    
+    <!-- Results -->
+    <rect x="550" y="205" width="180" height="90" fill="#ffebee" rx="5" ry="5" stroke="#F44336" stroke-width="2" />
+    <text x="640" y="230" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Results</text>
+    <text x="640" y="255" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">All models: AUC ≤ 0.5</text>
+    <text x="640" y="275" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">Limited by sample size (n=40)</text>
+  </g>
+  
+  <!-- Arrows -->
+  <g id="arrows" stroke="#555" stroke-width="2" fill="none">
+    <!-- Data to Phase 1 -->
+    <path d="M230,135 L300,135" marker-end="url(#arrowhead)" />
+    
+    <!-- Phase connections -->
+    <path d="M390,180 L390,205" marker-end="url(#arrowhead)" />
+    <path d="M390,295 L390,320" marker-end="url(#arrowhead)" />
+    
+    <!-- All phases to results -->
+    <path d="M480,135 L515,135 L515,250 L550,250" marker-end="url(#arrowhead)" />
+    <path d="M480,250 L550,250" marker-end="url(#arrowhead)" />
+    <path d="M480,365 L515,365 L515,250 L550,250" marker-end="url(#arrowhead)" />
+  </g>
+  
+  <!-- Conclusion section -->
+  <g id="conclusion">
+    <rect x="200" y="440" width="400" height="45" fill="#e0f7fa" rx="5" ry="5" stroke="#00BCD4" stroke-width="2" />
+    <text x="400" y="468" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">Future Direction: CEBRA for Time-Locked Dyadic EEG</text>
+  </g>
+  
+  <!-- Arrowhead marker for all arrows -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#555" />
+    </marker>
+  </defs>
+  
+  <!-- Information box on limitations -->
+  <g id="limitations">
+    <rect x="40" y="320" width="200" height="90" fill="#fafafa" rx="5" ry="5" stroke="#9E9E9E" stroke-width="2" />
+    <text x="140" y="345" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">Challenges</text>
+    <text x="140" y="370" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• Small dataset (n=40)</text>
+    <text x="140" y="390" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• High dimensionality (p=320)</text>
+    <text x="140" y="410" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• Weak signal in static features</text>
+  </g>
+</svg>
