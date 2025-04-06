@@ -1,68 +1,112 @@
-# EEG Brain State Classification-GSOC NEURODYAD Preliminary Task Exploration
+# EEG Brain State Classification - GSOC NEURODYAD Preliminary Task
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub Repo](https://img.shields.io/badge/GitHub-Repo-blue.svg)](https://github.com/daksh-mor/cebra/tree/main)
 
 ## Overview
 
-This repository documents the systematic exploration undertaken for the preliminary test task associated with the **GSOC 2025 NEURODYAD project**. The test involved classifying participant brain states (binary) using a provided dataset (N=40 samples) containing static EEG band power features (alpha, beta, delta, theta, gamma) from a 64-channel setup.
+This repository documents the exploration of classifying EEG-derived brain states using a small (N=40), high-dimensional (320 features) dataset. This was a preliminary task for the **GSOC 2025 NEURODYAD project**. The analysis involved completing the requested tasks (baseline modeling, feature selection) and further exploring a novel approach using Graph Neural Networks (GNNs) to leverage the data's spatial structure. The goal was to understand data characteristics and evaluate standard/advanced approaches before tackling the main project's goals.
 
-![pipeline](https://github.com/user-attachments/assets/4482d080-3db8-4681-a09d-8ec4f0644cb6)
-
-**The primary goal of this exploration was to assess the dataset's characteristics and evaluate standard machine learning and graph-based approaches before tackling the main project's focus on CEBRA and time-locked dyadic EEG data.**
+![Overall Workflow](images/workflow_diagram.png)
+*(Figure: Project Workflow, including Tasks 1 & 2 and the Novel GNN Exploration)*
 
 ![Channel Distribution](images/channel_distribution.png)
-*(Figure: 64-Channel EEG Electrode Configuration)*
+*(Figure: 64-Channel EEG Electrode Configuration Used)*
 
 ## The Challenge: Small Data, High Dimensions
 
-A key characteristic of this test dataset is its size: only **40 samples** with **320 features** (64 channels x 5 bands). This presents significant challenges:
+![Challenge Icon](images/data_challenge_icon.png) *(Figure: Conceptual Icon for N << P)*
 
-*   High risk of overfitting.
-*   Difficulty in learning generalizable patterns.
-*   Unreliable performance metrics on small test sets.
-*   Standard distance/similarity measures (like in KNN) become less effective.
+*   **Samples (N):** 40
+*   **Features (P):** 320 (64 channels x 5 bands)
+*   **Problem:** High risk of overfitting, unreliable metrics, ineffective distance measures ("Curse of Dimensionality").
 
-Recognizing these limitations guided the structured approach documented here.
+## Approach
 
-## Approach & Methodology
+The analysis followed these steps:
 
-The analysis was conducted in phases:
+1.  **Task 1: Baseline Modeling:** Evaluated standard classifiers (Logistic Regression, SVM, KNN) using 5-Fold Cross-Validation.
+2.  **Task 2: Feature Exploration:** Used UFS, RFE, and PCA to identify potentially important features.
+3.  **Novel Approach: Graph Neural Networks (GNNs):** Explored GCNs, leveraging electrode topology and feature engineering, evaluated with K-Fold CV.
 
-1.  **Baseline Modeling (Task 1):** Standard ML classifiers (Logistic Regression, SVM with multiple kernels, KNN) were applied using 5-Fold Stratified Cross-Validation to establish initial performance benchmarks on the raw features. ([See Notebook 01](notebooks/01_Baseline_ML_Classification.ipynb))
-2.  **Feature Exploration (Task 2):** Different feature selection/reduction techniques (Univariate Selection, Recursive Feature Elimination, PCA) were used to identify potentially informative feature subsets and understand feature importance from different perspectives. ([See Notebook 02](notebooks/02_Feature_Selection_Analysis.ipynb))
-3.  **Graph Neural Networks (GNNs):** Leveraging the inherent spatial structure of the EEG channels, GNNs (GAT and GCN) were explored. This included:
-    *   Defining the graph structure based on electrode adjacency.
-    *   Implementing robust K-Fold Cross-Validation for GNNs.
-    *   Testing model simplification, hyperparameter tuning, feature scaling, and Layer Normalization.
-    *   Attempting feature engineering by adding regional averages and band power ratios as node features. ([See Notebook 03](notebooks/03_GNN_Exploration.ipynb))
+## Task 1: Baseline Model Performance (5-Fold CV)
 
-## Key Findings & Conclusion from Test Task
+Standard classifiers were tested using a robust 5-Fold Cross-Validation setup with scaling. Performance was generally poor, near or below random chance.
 
-Across all phases and models, a consistent pattern emerged:
+| Model                | Avg. Accuracy | Avg. F1 Score | Avg. AUC |
+| :------------------- | :-----------: | :-----------: | :------: |
+| Logistic Regression  | 0.300 ± 0.100 | 0.359 ± 0.090 | 0.288 ± 0.094 |
+| SVM (RBF Kernel)     | 0.375 ± 0.079 | 0.226 ± 0.192 | 0.213 ± 0.123 |
+| SVM (Linear Kernel)  | 0.300 ± 0.100 | 0.328 ± 0.082 | 0.275 ± 0.146 |
+| SVM (Poly Kernel)    | **0.400 ± 0.050** | 0.109 ± 0.218 | 0.138 ± 0.139 |
+| SVM (Sigmoid Kernel) | 0.325 ± 0.100 | 0.223 ± 0.206 | 0.138 ± 0.092 |
+| KNN (k=5)            | 0.000 ± 0.000 | 0.000 ± 0.000 | 0.000 ± 0.000 |
+| KNN (k=7)            | 0.000 ± 0.000 | 0.000 ± 0.000 | 0.000 ± 0.000 |
 
-*   **Poor Performance:** All tested models (standard ML and GNNs) performed at or significantly below random chance (Avg. AUC often < 0.5) when evaluated using robust cross-validation.
-*   **Data Limitation:** The extremely small sample size (N=40) is the most likely primary limiting factor, preventing models from learning generalizable patterns and likely causing them to overfit noise or spurious correlations.
-*   **Signal Strength:** The static band power features, even with feature selection, engineering, and graph structure incorporated, appear to lack a strong, discernible signal for reliably classifying the two brain states in this specific dataset.
-*   **Feature Selection Divergence:** UFS, RFE, and PCA correctly identified different "top" features, highlighting their distinct underlying mechanisms for evaluating importance.
+*Note: Results highlight the difficulty of learning from this limited dataset.*
 
-![Optional Results Plot](images/gnn_results_plot.png)
+![PCA Plot](images/pca.png)
+*(Figure: PCA visualization showing lack of clear linear separability)*
 
-**In conclusion, this thorough exploration of the preliminary test dataset successfully demonstrated the application of various ML and GNN techniques but ultimately highlighted the significant challenges posed by the dataset's size and potential lack of signal in the provided static features. This outcome strongly motivates the use of more advanced techniques like CEBRA on richer, time-series dyadic data, as planned for the main GSOC project.**
+## Task 2: Feature Selection
+
+Different methods yielded different top features due to their distinct evaluation strategies. Using these subsets did not significantly improve CV performance.
+
+![Feature Selection Concepts](images/feature_selection_concepts.png)
+*(Figure: Conceptual difference between UFS, RFE, and PCA)*
+
+| Method | Top 5 Features Selected (Example Run)                 | Focus                               |
+| :----- | :---------------------------------------------------- | :---------------------------------- |
+| **UFS** | `alpha10`, `gamma23`, `gamma34`, `gamma38`, `gamma45` | Individual feature predictive power |
+| **RFE** | `alpha41`, `beta43`, `theta21`, `theta29`, `theta62`  | Collective features for model perf. |
+| **PCA** | `beta17`, `theta1`, `delta6`, `delta47`, `delta45`   | Capturing maximum data variance     |
+
+*Note: PCA features listed are original features with highest loadings on top components.*
+
+## Novel Approach: Graph Neural Networks (GNNs)
+
+Motivated by the spatial arrangement of EEG electrodes, GNNs were explored as an advanced technique beyond the core tasks.
+
+![GNN Architecture](images/gnn_architecture.png)
+*(Figure: Simplified GCN Architecture)*
+
+**GNN Performance (GCN with Feature Eng. & 5-Fold CV):**
+
+| Metric    | Average Score     |
+| :-------- | :---------------: |
+| Accuracy  | 0.5000 ± 0.1369   |
+| F1 Score  | 0.4931 ± 0.2586   |
+| AUC       | **0.5625 ± 0.1630**   |
+
+*Note: While showing the highest average AUC, GNNs still performed near chance level overall, indicating the data limitation persisted even with structural information and this novel approach.*
+
+![GNN Results](images/gnn_results_plot.png)
+*(Figure: Example GNN training/validation curves, often showing overfitting or stagnation)*
+
+## Key Findings & Conclusion
+
+*   **Task Completion:** Tasks 1 and 2 were successfully completed, revealing poor baseline performance and diverse feature importance perspectives.
+*   **Poor Generalization:** All tested models (baseline and GNN exploration) performed near or below chance levels under cross-validation.
+*   **Data Limitation:** The primary bottleneck is the extremely small sample size (N=40) relative to the high feature dimension (P=320).
+*   **Novel Exploration Confirms Limits:** The additional GNN exploration, while theoretically sound, confirmed that even advanced structural modeling could not overcome the fundamental data scarcity issues.
+
+**This outcome strongly motivates the use of methods like CEBRA on richer, time-series dyadic data, as planned for the main GSOC NEURODYAD project.**
 
 ## Repository Structure
 
-*   `/notebooks`: Contains Jupyter notebooks detailing each phase of the analysis.
-    *   `01_Baseline_ML_Classification.ipynb`: Task 1 implementation and results.
-    *   `02_Feature_Selection_Analysis.ipynb`: Task 2 implementation and results.
-    *   `03_GNN_Exploration.ipynb`: GNN (GAT/GCN) implementation, feature engineering, and results.
-*   `/data`: Contains the raw dataset (`EEG_data_-_Sheet1.csv`).
-*   `/images`: Contains supporting images .
+*   `/notebooks`: Jupyter notebooks for each analysis phase.
+    *   `01_Baseline_ML_Classification.ipynb`: Task 1 (Initial single split results).
+    *   `02_Feature_Selection_Analysis.ipynb`: Task 2 implementation.
+    *   `03_GNN_Exploration.ipynb`: (Novel Approach) Initial GNN attempts.
+*   `/data`: Raw dataset (`EEG data.csv`).
+*   `/images`: Supporting visual assets.
 *   `README.md`: This file.
+*   `full_documentation.md` / `eeg_classification_report.pdf`: Detailed documentation/report.
 
 ## Connection to GSOC NEURODYAD Project
 
-This repository documents the work performed on the preliminary test task. The findings here reinforce the need for the advanced methods proposed in the main NEURODYAD project, specifically using **CEBRA on time-locked dyadic EEG data**. The challenges encountered with static features and small sample size highlight the potential benefits of CEBRA's contrastive learning approach for uncovering meaningful neural dynamics from richer temporal datasets and adapting it for clinical comparisons.
+This preliminary work confirms the need for advanced techniques like **CEBRA on time-locked dyadic EEG data** proposed in the main NEURODYAD project. The limitations encountered here underscore the potential of CEBRA to handle high-dimensional temporal data and extract meaningful dynamics, especially when combined with post-embedding analyses (TDA, dynamics) for clinical comparisons.
 
 ## Overall Conclusion So Far
 
-Recognizing the limitations inherent in the small, static test dataset, simply achieving high performance on that specific task was deemed less critical than demonstrating a robust methodology and identifying the need for more advanced approaches. Therefore, while the preliminary tasks were thoroughly completed as documented above, the proposed focus for the main GSOC project shifts entirely towards the core goal: implementing the CEBRA pipeline for time-locked, dyadic EEG data. Insights gained from the CEBRA documentation and key papers (notably Schneider et al., 2023 on the method itself, and McCleod et al. on the clinical context of ASD differences) highlight the potential of CEBRA's self-supervised, contrastive learning approach to generate consistent and interpretable latent embeddings from high-dimensional temporal data like EEG – capabilities essential for overcoming the challenges faced with the static test features. While static measures like power-law exponents (McCleod et al.) can reveal group differences, CEBRA offers a powerful lens into the temporal dynamics underlying social interaction. To provide significant novelty and fully exploit these rich embeddings, I propose concentrating on advanced post-embedding analysis leveraging topological and dynamical systems perspectives. This involves applying techniques such as Topological Data Analysis (TDA) to quantify the 'shape' of the neural state manifolds and analyzing state transition dynamics and embedding-space connectivity within the learned CEBRA latent space. By comparing these sophisticated metrics between neurotypical and clinical dyads, this approach aims to uncover potentially subtle but crucial differences in interaction dynamics, directly addressing the project's goal of identifying differentiating neural parameters and showcasing a deeper, research-oriented application of CEBRA well beyond the scope of the preliminary test.
+This exploration fulfilled the preliminary task requirements and, through additional GNN exploration, thoroughly demonstrated the significant limitations of the provided dataset. The focus now shifts entirely to the main GSOC goal: implementing CEBRA for dyadic EEG, leveraging its strengths in analyzing temporal dynamics, and applying advanced post-embedding analysis (TDA, dynamical systems) to uncover subtle differences in neural interaction patterns between groups. Find the code at [github.com/daksh-mor/cebra/tree/main](https://github.com/daksh-mor/cebra/tree/main).
