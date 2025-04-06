@@ -83,6 +83,10 @@ Motivated by the spatial arrangement of EEG electrodes, GNNs were explored as an
 ![GNN Results](images/gnn_results_plot.png)
 *(Figure: Example GNN training/validation curves, often showing overfitting or stagnation)*
 
+![Results Comparison Chart](images/results_comparison_chart.png) *(Figure: Bar chart comparing Baseline CV vs GNN CV AUC/Accuracy)*
+
+*Key Takeaway: No method reliably classifies the data above chance levels when evaluated properly. The GNN exploration, while yielding the highest average AUC, did not fundamentally solve the data limitation problem.*
+
 ## Key Findings & Conclusion
 
 *   **Task Completion:** Tasks 1 and 2 were successfully completed, revealing poor baseline performance and diverse feature importance perspectives.
