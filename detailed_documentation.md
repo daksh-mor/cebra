@@ -1,234 +1,176 @@
-# EEG Classification for Metabolic State Detection: A Comprehensive Analysis
+# EEG Classification for Metabolic State Detection: Detailed Analysis
 
-## Overview 
+## 1. Introduction: Understanding the Data
 
-![Overview](images/pipeline.svg)
+This project analyzes Electroencephalography (EEG) data to classify brain states associated with different metabolic conditions.
 
-## Dataset Understanding
+### EEG Basics
 
-I'm working with brain wave data collected using EEG (Electroencephalography). This method captures brain activity by placing electrodes on the scalp using the international 10-20 system - but with an extended 64-electrode configuration instead of the standard 19 electrodes.
+*   **Technique:** Records electrical activity from the scalp.
+*   **Setup:** 64 electrodes placed according to an extended 10-20 system.
+*   **Features:** Power spectral density calculated for 5 standard frequency bands at each electrode.
 
-Each electrode captures 5 different brain wave frequency bands:
+![Channel Distribution](images/channel_distribution.png)
+*(Figure: 64-Channel EEG Electrode Configuration)*
 
-- **Alpha (8-13 Hz)**: Associated with relaxed alertness, meditation
-- **Beta (13-30 Hz)**: Associated with normal waking consciousness, active thinking
-- **Delta (0.5-4 Hz)**: Associated with deep sleep
-- **Theta (4-8 Hz)**: Associated with drowsiness, meditation, creativity
-- **Gamma (30-100 Hz)**: Associated with higher cognitive processes, peak concentration
+### Frequency Bands Analyzed
 
-The band power values represent the intensity of activity in each frequency range at each electrode location. The target variable (0 or 1) represents different metabolic states of the brain at that particular moment.
+| Band    | Frequency Range | Associated Brain States                                |
+| :------ | :-------------: | :----------------------------------------------------- |
+| Delta   | 0.5 - 4 Hz      | Deep sleep, non-REM sleep                              |
+| Theta   | 4 - 8 Hz        | Drowsiness, meditation, creativity, light sleep        |
+| Alpha   | 8 - 13 Hz       | Relaxed wakefulness, calmness, eyes closed             |
+| Beta    | 13 - 30 Hz      | Active thinking, concentration, alertness, anxiety     |
+| Gamma   | 30 - 100 Hz     | Higher cognitive processing, learning, sensory binding |
 
-### Dataset Characteristics
+## 2. Dataset Overview
 
-- **Samples**: 40 participants (balanced dataset with 20 samples in each class)
-- **Features**: 320+ features (64 electrodes × 5 frequency bands)
-- **Challenge**: High-dimensional data with limited samples (classic n << p problem)
+![Overview Diagram](images/pipeline.svg)
+*(Figure: High-Level Project Pipeline)*
 
-## Task 1: Traditional Classification Approaches
+| Characteristic      | Value                                              | Implication                                       |
+| :------------------ | :------------------------------------------------- | :------------------------------------------------ |
+| **Samples**         | 40 (20 per class)                                  | Extremely small dataset size                      |
+| **Features**        | 320 (64 electrodes × 5 bands)                      | High-dimensional space                            |
+| **Target**          | Binary (0 or 1 metabolic state)                    | Balanced classification task                      |
+| **Primary Challenge** | **N << P** (Samples << Features)                   | High risk of overfitting, unreliable evaluation   |
 
-My task was to classify this EEG data using three different algorithms:
+## 3. Task 1: Baseline Classification Models
 
-1. Linear Regression (Logistic Regression for classification)
-2. Support Vector Machines (SVM) with different kernels
-3. k-Nearest Neighbors (KNN)
+Initial evaluation using standard ML algorithms. Results below are from **single train/test splits (80/20)** unless specified as CV.
 
-For each model, I needed to report accuracy, precision, recall, and F1 score.
+### Model Performance (Single Split Validation)
 
-### Data Preparation
+| Model               | Kernel/K | Train Acc. | Val. Acc. | Train F1 | Val. F1 | Notes                                   |
+| :------------------ | :------- | :--------: | :-------: | :------: | :-----: | :-------------------------------------- |
+| Logistic Regression | -        | 1.000      | 0.250     | 1.000    | 0.250   | Poor generalization, likely overfit     |
+| SVM                 | Linear   | 1.000      | 0.375     | 1.000    | 0.286   | Poor generalization                     |
+| SVM                 | Poly     | 0.563      | **0.500** | 0.696    | **0.667** | Better, but still near chance           |
+| SVM                 | RBF      | 0.594      | 0.375     | 0.711    | 0.545   | Overfitting                             |
+| SVM                 | Sigmoid  | 0.594      | **0.500** | 0.711    | **0.667** | Better, but still near chance           |
+| KNN                 | k=1      | 1.000      | 0.250     | 1.000    | 0.250   | Severe overfitting                      |
+| KNN                 | k=3      | 0.813      | 0.125     | 0.824    | 0.222   | Very poor generalization                |
+| KNN                 | k=5      | 0.688      | 0.000     | 0.688    | 0.000   | Fails completely on validation          |
+| KNN                 | k=7      | 0.656      | 0.250     | 0.593    | 0.250   | Poor generalization                     |
 
-Given the small dataset size but high feature dimensionality, I used stratified train-test split to maintain class balance in both training and validation sets. This is essential for reliable performance estimation when working with balanced but small datasets.
+![PCA Plot](images/pca.png)
+*(Figure: PCA shows poor linear separability, explaining low linear model performance)*
 
-![EEG electrode distribution](images/channel_distribution.png)
-### Analysis Results
+### Interpretation
 
-#### Linear Regression (Logistic Regression)
+*   **Non-Linearity:** Linear models perform poorly; non-linear SVM kernels (Poly, Sigmoid) perform slightly better (~50% Acc), suggesting non-linear patterns.
+*   **Overfitting:** All models show a large gap between training and validation scores.
+*   **Curse of Dimensionality:** KNN performance collapses, likely due to meaningless distance calculations in 320 dimensions with only 40 points.
+*   **Data Limitation:** Performance is generally poor, indicating the models cannot learn robust patterns from the limited data.
 
-```
-{'Accuracy': 0.25, 'Precision': 0.25, 'Recall': 0.25, 'F1 Score': 0.25}
-```
+### Baseline Performance (5-Fold Cross-Validation)
 
-To check whether the data was linearly separable, I plotted it using PCA to reduce to 2 dimensions:
+Repeating the baseline evaluation with robust 5-Fold CV confirms the poor performance:
 
-![PCA](images/pca.png)
+| Model                | Avg. Accuracy | Avg. F1 Score | Avg. AUC |
+| :------------------- | :-----------: | :-----------: | :------: |
+| Logistic Regression  | 0.300 ± 0.100 | 0.359 ± 0.090 | 0.288 ± 0.094 |
+| SVM (RBF Kernel)     | 0.375 ± 0.079 | 0.226 ± 0.192 | 0.213 ± 0.123 |
+| SVM (Linear Kernel)  | 0.300 ± 0.100 | 0.328 ± 0.082 | 0.275 ± 0.146 |
+| SVM (Poly Kernel)    | **0.400 ± 0.050** | 0.109 ± 0.218 | 0.138 ± 0.139 |
+| SVM (Sigmoid Kernel) | 0.325 ± 0.100 | 0.223 ± 0.206 | 0.138 ± 0.092 |
+| KNN (k=5 / k=7)      | 0.000 ± 0.000 | 0.000 ± 0.000 | 0.000 ± 0.000 |
 
-The visualization confirmed my suspicion - the data isn't linearly separable, which explains the poor performance of the logistic regression model.
+*Conclusion: Even the best baseline (SVM Poly) performs poorly under CV.*
 
-#### Support Vector Machines (SVM)
+## 4. Task 2: Feature Selection & Dimensionality Reduction
 
-##### Linear Kernel
+Exploring ways to reduce the 320 features to potentially more informative subsets.
 
-```
-Train:  {'Accuracy': 1.0, 'Precision': 1.0, 'Recall': 1.0, 'F1 Score': 1.0}
-Validation:  {'Accuracy': 0.375, 'Precision': 0.3333333333333333, 'Recall': 0.25, 'F1 Score': 0.2857142857142857}
-```
+### Feature Selection Methods & Results
 
-The linear SVM showed clear signs of overfitting - perfect on training data but poor on validation. This reinforced that linear boundaries won't work well on this data.
+![Feature Selection Concepts](images/feature_selection_concepts.png)
+*(Figure: Conceptual difference between UFS, RFE, and PCA)*
 
-##### Polynomial Kernel
+| Method | Top 5 Features (Example Run)                          | Evaluation Strategy                      |
+| :----- | :---------------------------------------------------- | :--------------------------------------- |
+| **UFS** | `alpha10`, `gamma23`, `gamma34`, `gamma38`, `gamma45` | Individual feature statistical relevance |
+| **RFE** | `alpha41`, `beta43`, `theta21`, `theta29`, `theta62`  | Iterative model-based feature removal    |
+| **PCA** | `beta17`, `theta1`, `delta6`, `delta47`, `delta45`   | Variance maximization via projection     |
 
-```
-Train:  {'Accuracy': 0.5625, 'Precision': 0.5333333333333333, 'Recall': 1.0, 'F1 Score': 0.6956521739130435}
-Validation:  {'Accuracy': 0.5, 'Precision': 0.5, 'Recall': 1.0, 'F1 Score': 0.6666666666666666}
-```
+*Note: PCA features are original features with highest loadings on top components.*
 
-I tried different polynomial degrees (even up to degree=100) but performance remained consistent around 50% accuracy.
+![UFS Scores](images/ufs_scores.png)
+*(Figure: Univariate scores (f_classif p-values) for all features)*
 
-##### RBF Kernel
+### Why Selected Features Differ
 
-```
-Train:  {'Accuracy': 0.59375, 'Precision': 0.5517241379310345, 'Recall': 1.0, 'F1 Score': 0.7111111111111111}
-Validation:  {'Accuracy': 0.375, 'Precision': 0.4285714285714285, 'Recall': 0.75, 'F1 Score': 0.5454545454545454}
-```
+*   **UFS:** Looks at features in isolation, ignoring interactions.
+*   **RFE:** Considers feature importance in the context of a specific predictive model.
+*   **PCA:** Focuses on data variance, not direct prediction; finds directions of max spread.
 
-##### Sigmoid Kernel
+*Insight: The lack of overlap highlights the complexity and potential interactions/redundancies not captured by simple methods.* Using these selected features in models did *not* yield significantly better cross-validated results (see notebooks), again pointing to the core data limitation.
 
-```
-Train:  {'Accuracy': 0.59375, 'Precision': 0.5517241379310345, 'Recall': 1.0, 'F1 Score': 0.7111111111111111}
-Validation:  {'Accuracy': 0.5, 'Precision': 0.5, 'Recall': 1.0, 'F1 Score': 0.6666666666666666}
-```
+## 5. Novel Approach: Graph Neural Networks (GNNs)
 
-I also experimented with different C values (regularization parameter) from 0.1 to 100, but they didn't significantly improve performance:
+Leveraging the spatial topology of EEG electrodes.
 
-```
-C = 0.1 to 100.0
-Validation: {'Accuracy': 0.5, 'Precision': 0.5, 'Recall': 1.0, 'F1 Score': 0.6666666666666666}
-```
+### Motivation
 
-This suggests complex, non-linear relationships in the data that these kernels struggle to model effectively.
+*   **Spatial Structure:** Electrodes aren't independent; neighbors likely share related information.
+*   **Complex Patterns:** GNNs can model relationships across space (electrodes) and features (bands).
+*   **Inductive Bias:** Graph structure can help regularize models, potentially beneficial for small N.
 
-#### k-Nearest Neighbors (KNN)
+### Implementation
 
-I tested KNN with different k values (1-9) using the ball_tree algorithm:
-
-```
-n_neighbours = 1
-Train:  {'Accuracy': 1.0, 'Precision': 1.0, 'Recall': 1.0, 'F1 Score': 1.0}
-Validation:  {'Accuracy': 0.25, 'Precision': 0.25, 'Recall': 0.25, 'F1 Score': 0.25}
-
-n_neighbours = 3
-Train:  {'Accuracy': 0.8125, 'Precision': 0.7777777777777778, 'Recall': 0.875, 'F1 Score': 0.8235294117647058}
-Validation:  {'Accuracy': 0.125, 'Precision': 0.2, 'Recall': 0.25, 'F1 Score': 0.22222222222222222}
-
-n_neighbours = 7
-Train:  {'Accuracy': 0.65625, 'Precision': 0.7272727272727273, 'Recall': 0.5, 'F1 Score': 0.5925925925925926}
-Validation:  {'Accuracy': 0.25, 'Precision': 0.25, 'Recall': 0.25, 'F1 Score': 0.25}
-```
-
-KNN performed even worse than SVM, with several k values (4, 5, 6, 8, 9) completely failing on the validation set (0% for precision, recall, and F1). This is likely due to the curse of dimensionality - KNN struggles in high-dimensional spaces where distance measures become less meaningful.
-
-### Interpretation & Reasoning
-
-Looking at the results across all models, I found:
-
-1. **Non-linear patterns**: All linear models (logistic regression, linear SVM) performed poorly, confirming the data isn't linearly separable.
-    
-2. **Modest improvement with non-linear methods**: Polynomial and sigmoid kernels reached 50% accuracy, better than linear methods but still limited.
-    
-3. **Overfitting across models**: All models showed significant drops between training and validation performance.
-    
-4. **Curse of dimensionality**: With 320+ features but only 40 samples, the models struggled. This particularly affected KNN, which relies on meaningful distance metrics.
-    
-5. **Complexity of brain data**: EEG signals contain complex, non-linear relationships that these basic models couldn't fully capture.
-    
-
-The best performing model was SVM with polynomial/sigmoid kernels, reaching 50% accuracy. This suggests the data contains non-linear patterns, but the high dimensionality and small sample size severely limited performance.
-
-## Task 2: Feature Selection and Dimensionality Reduction
-
-To address the high-dimensionality problem identified in Task 1, I explored three different approaches to identify the most informative features:
-
-### Top 5 Features Identified by Each Method
-
-- **PCA (Principal Component Analysis):**
-    
-    - Features: `['beta17', 'theta1', 'delta6', 'delta47', 'delta45']`
-    - _Note:_ PCA doesn't directly select original features. These represent the original features with the highest _absolute loadings_ (contribution) across the top 5 principal components.
-- **UFS (Univariate Feature Selection using `SelectKBest` with `f_classif`):**
-    
-    - Features: `['alpha10', 'gamma23', 'gamma34', 'gamma38', 'gamma45']`
-- **RFE (Recursive Feature Elimination):**
-    
-    - Features: `['alpha41', 'beta43', 'theta21', 'theta29', 'theta62']`
-
-### Why the Selected Features Differ Across Methods
-
-The selected features are **completely different** across the three methods due to their fundamentally different approaches to feature evaluation:
-
-1. **UFS (`SelectKBest` with `f_classif`):**
-    
-    - **Method**: Evaluates each feature _individually_ using ANOVA F-values to measure the relationship between single features and the target variable.
-    - **Characteristics**: Ignores feature interactions and potential redundancy. Selects features purely based on their individual discriminative power.
-2. **RFE (Recursive Feature Elimination):**
-    
-    - **Method**: Iteratively trains a model on all features, removes the least important feature(s), and repeats until reaching the desired number of features.
-    - **Characteristics**: Considers features _collectively_ through the lens of the chosen model. Selects features that work well _together_ to optimize model performance.
-3. **PCA (Principal Component Analysis):**
-    
-    - **Method**: Transforms features into uncorrelated components ordered by variance explained, not directly selecting features.
-    - **Characteristics**: Focuses on capturing data variance rather than target prediction. Feature importance is determined by contribution to principal components rather than predictive power.
-
-### Insights from Feature Selection Analysis
-
-1. **Frequency band patterns**: The gamma band appears prominently in UFS results, suggesting individual gamma frequencies might have stronger univariate relationships with the metabolic state.
-    
-2. **Electrode location diversity**: Features from different brain regions were selected across methods, indicating that information relevant to metabolic state classification may be distributed throughout the brain.
-    
-3. **Feature engineering opportunity**: The lack of consensus between methods suggests complex relationships in the data that might benefit from more sophisticated feature engineering approaches.
-    
-
-## Novel Approach: Graph Neural Networks for EEG Classification
-
-Given the spatial relationships between EEG electrodes and the complex patterns in the data, I explored Graph Neural Networks (GNNs) as a potentially more suitable approach.
-
-### Why GNNs are Appropriate for EEG Data:
-
-1. **Spatial relationships**: The electrode montage shows clear spatial structure. Traditional algorithms treat each feature independently, but EEG electrodes have spatial connections that GNNs can leverage.
-    
-2. **Complex patterns**: With 64 electrodes and 5 frequency bands, GNNs can capture patterns across both spatial and frequency domains.
-    
-3. **Limited sample size**: With only 40 samples but 320 features, GNNs can incorporate the spatial structure as an inductive bias to potentially improve generalization.
-    
-
-### GNN Implementation Approach:
-
-1. **Graph construction**:
-    
-    - **Nodes**: Each electrode (1-64) becomes a node
-    - **Node features**: For each node, used the 5 frequency band values
-    - **Edges**: Connected electrodes based on their physical adjacency in the EEG montage
-2. **Model architecture**:
-    
-    - Graph Convolutional Networks (GCN) layers
-    - Batch normalization for training stability
-    - Global pooling to aggregate information across the graph
-    - Dropout for regularization
-
-### GNN Results and Limitations:
-
-Despite the theoretical advantages, the GNN approach faced similar limitations as traditional methods due to the extremely small dataset size. The model showed:
-
-1. **Overfitting**: Perfect or near-perfect training accuracy but limited validation performance
-2. **Instability**: High variance in results across different train-test splits
-3. **Limited generalization**: Unable to significantly outperform the best traditional methods
-
-## Conclusions and Future Directions
-
-The comprehensive analysis across traditional machine learning methods and graph neural networks revealed several important insights:
-
-1. **Data scarcity is the primary limitation**: With only 40 samples and 320+ features, all models struggled with generalization regardless of their sophistication.
-    
-2. **Non-linear methods show promise**: The best results came from non-linear approaches (SVMs with non-linear kernels), suggesting complex relationships in the data.
-    
-3. **Spatial relationships matter**: The structure of EEG data suggests that approaches incorporating spatial information (like GNNs) have theoretical advantages, though they need more data to realize this potential.
-    
-
-### Next Steps:
-
-1. **Data augmentation**: Implement EEG-specific data augmentation techniques to artificially increase the sample size.
-    
-2. **Transfer learning**: Leverage pre-trained models on larger EEG datasets and fine-tune on this specific task.
-    
-
-### Final Assessment:
-
-The project demonstrates that even with sophisticated methods like GNNs, the fundamental challenge of EEG classification with limited data remains. The most promising path forward involves either acquiring more data or leveraging external knowledge through transfer learning approaches.
+![Graph Construction](images/gnn_graph_construction.png)
+*(Figure: Representing EEG data as a graph)*
+
+![GNN Architecture](images/gnn_architecture.png)
+*(Figure: Simplified GCN model structure)*
+
+![GNN CV Workflow](images/gnn_cv_workflow.png)
+*(Figure: 5-Fold CV process for GNNs including feature engineering & scaling)*
+
+*   **Nodes:** 64 EEG Electrodes.
+*   **Edges:** Defined by electrode adjacency (from `adjacency` dictionary).
+*   **Node Features (Initial):** 5 band power values per electrode.
+*   **Node Features (Engineered):** 12 features per node (5 original bands + 5 regional avg. bands + 2 band ratios).
+*   **Model:** Graph Convolutional Network (GCN).
+*   **Evaluation:** Stratified 5-Fold Cross-Validation with Feature Engineering & Scaling *within each fold*.
+
+### GNN Results (5-Fold CV)
+
+| GNN Configuration             | Avg. Accuracy | Avg. F1 Score | Avg. AUC | Notes                                      |
+| :---------------------------- | :-----------: | :-----------: | :------: | :----------------------------------------- |
+| Initial GCN (5 features/node) | ~0.375        | ~0.273        | ~Low     | (Based on single run, likely poor CV perf) |
+| GCN + Feat. Eng. (12 feat/node) | 0.500 ± 0.137 | 0.493 ± 0.259 | **0.563 ± 0.163** | Slightly better AUC, still near chance |
+
+*Limitations: Despite incorporating structure and engineered features, GNN performance remained constrained by data scarcity, showing high variance and limited predictive power.*
+
+## 6. Comparative Summary (Cross-Validated Performance)
+
+Comparing the most robust evaluations across approaches:
+
+| Approach                          | Best Avg. Accuracy | Best Avg. F1 Score | Best Avg. AUC | Primary Limitation Highlighted          |
+| :-------------------------------- | :----------------: | :----------------: | :-----------: | :-------------------------------------- |
+| Baseline ML (5-Fold CV)           | 0.400 ± 0.050      | 0.359 ± 0.090      | 0.288 ± 0.094 | Data scarcity, high dimensionality      |
+| GNN with Feat. Eng. (5-Fold CV) | 0.500 ± 0.137      | 0.493 ± 0.259      | 0.563 ± 0.163 | Data scarcity, signal strength          |
+
+![Results Comparison Chart](images/results_comparison_chart.png)
+*(Optional Figure: Bar chart comparing Baseline CV vs GNN CV AUC/Accuracy)*
+
+*Key Takeaway: No method reliably classifies the data above chance levels when evaluated properly.*
+
+## 7. Conclusions & Future Directions
+
+### Key Findings
+
+1.  **Data Scarcity:** The N=40 sample size is the overwhelming limitation.
+2.  **Limited Signal:** Static band power features alone appear insufficient for robust classification in this dataset.
+3.  **Methodology Validation:** Standard and advanced techniques were correctly applied, but their effectiveness was capped by the data.
+4.  **GNN Potential:** While not successful here, GNNs remain theoretically relevant for EEG if more data were available.
+
+### Next Steps & Project Relevance
+
+*   The limitations found here motivate the **GSOC NEURODYAD project's focus on CEBRA**.
+*   CEBRA is designed for high-dimensional **time-series** data, potentially capturing richer dynamics than static features.
+*   Future work should focus on:
+    *   Implementing **CEBRA** on appropriate time-locked dyadic EEG.
+    *   Applying advanced **post-embedding analyses** (TDA, dynamics) to CEBRA outputs.
+    *   **(If addressing this specific dataset was required):** Exploring data augmentation or transfer learning.
